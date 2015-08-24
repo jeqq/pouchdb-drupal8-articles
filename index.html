@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="app">
+<head>
+  <meta charset="utf-8" />
+  <title>PouchDB - Drupal 8 - Articles</title>
+  <link rel="stylesheet" type="text/css" href="style/base.css">
+  <link rel="stylesheet" type="text/css" href="lib/ng-tags-input/ng-tags-input.css">
+</head>
+<body ng-controller="ArticleCtrl">
+
+  <section id="article-control" class="show">
+    <p>
+      <button ng-click="addArticle()" class="control-articles" type="button">Add a new article</button>
+      <button ng-click="viewArticles()" class="control-articles" type="button">View articles</button>
+    </p>
+  </section>
+
+  <section id="add-new-article" class="show" ng-show="show">
+    <h2>Add a new article</h2>
+    <form ng-submit="submit(article)" id="add-new-article-form">
+      <p>
+        <input ng-init="setId()" ng-model="article._id" type="hidden" id="_id"  name="_id" value="">
+        <input ng-model="article._rev" type="hidden" id="_rev" name="_rev" value="">
+      </p>
+      <p>
+        <label for="article-title">Title</label>
+        <input ng-model="article.title[0].value" type="text" id="article-title" name="article-title" placeholder="Add article title here. This field is required." value="" required>
+      </p>
+      <p>
+        <label for="article-body">Body</label>
+        <textarea ng-model="article.body[0].value" id="article-body" name="article-body" cols="50" rows="5" placeholder=""></textarea>
+      </p>
+      <p>
+        <label for="article-tags">Tags</label>
+        <tags-input ng-model="tags[article._id]"
+                    id="article-tags"
+                    name="article-tags"
+                    display-property="name"
+                    on-tag-added="tagAdded($tag)"
+                    on-tag-removed="tagRemoved($tag, article)">
+          <auto-complete source="loadTags($query)"></auto-complete>
+        </tags-input>
+        <span class="guidance">Enter a comma-separated list. For example: Amsterdam, Barcelona, New York.</span>
+      </p>
+      <p>
+        <label for="article-status">Status</label>
+        <input ng-model="article.status[0].value" type="checkbox" name="article-status" id="article-status">
+      </p>
+      <p>
+        <label for="attachment" class="btn">Attachment:</label>
+        <input ng-model="article.attachment[0].value" type="file" id="attachment" name="attachment">
+        <span class="filelist"></span>
+      </p>
+
+      <div id="attachments" class="hide">
+        <h2>Attachments</h2>
+        <ul id="attachments-list"></ul>
+      </div>
+
+      <p>
+        <button id="submit" type="submit">Save article</button>
+      </p>
+    </form>
+  </section>
+
+  <section id="all-articles" ng-hide="show">
+    <h2>Recent articles:</h2>
+    <table id="articles-list">
+      <thead>
+      <tr>
+        <th>Title</th>
+        <th>Type</th>
+        <th>Status</th>
+        <th>Operations</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr ng-repeat="article in articles" ng-cloak>
+        <td class="align-text">{{ article.title[0].value }}</td>
+        <td class="align-text">{{ article['@type'] }}</td>
+        <td class="align-text">{{ article.status[0].value ? 'Published' : 'Unpublished' }}</td>
+        <td class="align-text">
+          <span class="align-text link" ng-click="edit(article)">Edit</span>
+           |
+          <span class="align-text link" ng-click="delete(article._id)">Delete</span>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <script src="lib/pouchdb-4.0.0.min.js"></script>
+  <script src="lib/angular.js"></script>
+  <script src="lib/ng-tags-input/ng-tags-input.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
