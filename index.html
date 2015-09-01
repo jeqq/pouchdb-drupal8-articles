@@ -47,14 +47,18 @@
         <input ng-model="article.status[0].value" type="checkbox" name="article-status" id="article-status">
       </p>
       <p>
-        <label for="attachment" class="btn">Attachment:</label>
-        <input ng-model="article.attachment[0].value" type="file" id="attachment" name="attachment">
+        <label for="attachment" class="btn">Attach a new file:</label>
+        <input type="file" id="attachment" name="attachment">
         <span class="filelist"></span>
       </p>
 
-      <div id="attachments" class="hide">
+      <div id="attachments" class="show">
         <h2>Attachments</h2>
-        <ul id="attachments-list"></ul>
+        <ul id="attachments-list">
+          <li ng-repeat="attachment in attachments[article._id]"  ng-cloak>
+            <a ng-href="data:{{attachment.content_type}};base64,{{attachment.data}}" target="_blank">{{attachment.filename}}</a>
+          </li>
+        </ul>
       </div>
 
       <p>

@@ -3,6 +3,12 @@
 
   var app = angular.module('app', ['ngTagsInput']);
 
+  app.config(['$compileProvider',
+    function ($compileProvider) {
+      $compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|data):/);
+    }]
+  );
+
   app.factory('pouch',  function() {
     var db = new PouchDB('articles0003');
     var remote = '';
@@ -32,34 +38,51 @@
     function($rootScope, pouch, util) {
       var articles = {};
       var tags = {};
+      var attachments = {};
       tags['all_names'] = [];
 
       pouch.changes({ live: true })
         .on('change', function handleUpdate(change) {
           if (!change.deleted) {
-            pouch.get(change.id).then(function(doc) {
+            pouch.get(change.id, {attachments:true}).then(function(doc) {
               if (doc['@type'] == 'node') {
                 $rootScope.$apply(function() {
                   articles[doc._id] = doc;
                 });
-                var values = doc.field_tags;
-                tags[doc._id] = [];
-                angular.forEach(values, function(value, key){
-                  pouch.get(value.target_uuid).then(function (tag) {
-                    if (!tag.deleted) {
-                      var tagObj = {
-                        'name': tag.name[0].value,
-                        '_id': tag._id
-                      };
-                      $rootScope.$apply(function () {
-                        tags[doc._id].push(tagObj);
+
+                // Get the list of tags.
+                if (doc.field_tags) {
+                  tags[doc._id] = [];
+                  angular.forEach(doc.field_tags, function(value, key){
+                    pouch.get(value.target_uuid).then(function (tag) {
+                      if (!tag.deleted) {
+                        var tagObj = {
+                          'name': tag.name[0].value,
+                          '_id': tag._id
+                        };
+                        $rootScope.$apply(function () {
+                          tags[doc._id].push(tagObj);
+                        });
+                      }
+                    })
+                      .catch(function (reason) {
+                        console.log(reason);
                       });
-                    }
-                  })
-                    .catch(function (reason) {
-                      console.log(reason);
+                  });
+                }
+
+                // Get the list of attachments.
+                if (doc._attachments) {
+                  attachments[doc._id] = [];
+                  angular.forEach(doc._attachments, function(value, key){
+                    $rootScope.$apply(function () {
+                      // Get field name, delta, file uuid, scheme and filename from key.
+                      var filemeta = key.split('/');
+                      value['filename'] = filemeta[4];
+                      attachments[doc._id].push(value);
                     });
-                });
+                  });
+                }
               }
               if (doc['@type'] == 'taxonomy_term') {
                 var tagObj = {
@@ -84,6 +107,7 @@
       return {
         articles: articles,
         tags: tags,
+        attachments: attachments,
         add: function(article) {
           article['@type'] = article['@type'] ? article['@type'] : 'node';
           article.type = article.type ? article.type : [{'target_id': 'article'}];
@@ -148,6 +172,7 @@
 
       $scope.articles = Articles.articles;
       $scope.tags = Articles.tags;
+      $scope.attachments = Articles.attachments;
       $scope.show = false;
 
       $scope.addArticle = function() {
